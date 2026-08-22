@@ -11,6 +11,8 @@
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
     "@types/socket.io-client": "^1.4.36",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "next": "16.3.1",
     "next-auth": "^4.24.15",
     "react": "19.2.8",
