@@ -33,17 +33,26 @@ export default function ShareModal({ noteId, userId, isOpen, onClose, onShare }:
     }, [isOpen, noteId]);
 
     const fetchShareableUsers = async () => {
-        try {
-            setLoading(true);
-            const res = await fetch(`/api/canvas/share?noteId=${noteId}&userId=${userId}`);
-            const data = await res.json();
-            setUsers(data.users || []);
-        } catch (error) {
-            console.error('Error fetching users:', error);
-        } finally {
-            setLoading(false);
+    try {
+        setLoading(true);
+        const res = await fetch(`/api/canvas/share?noteId=${noteId}&userId=${userId}`);
+        
+        // Check if response is OK before parsing
+        if (!res.ok) {
+            const text = await res.text();
+            console.error('API Error Response:', text);
+            throw new Error(`API returned ${res.status}`);
         }
-    };
+        
+        const data = await res.json();
+        setUsers(data.users || []);
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        setUsers([]); //
+    } finally {
+        setLoading(false);
+    }
+};
 
     const handleToggleUser = (userId: number) => {
         const newSet = new Set(selectedUsers);

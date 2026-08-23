@@ -62,7 +62,7 @@ export default function CanvasPage() {
 
 
   const userId = 1;
-  const sectionId = 3;
+  const sectionId = 1;
 
   const fetchNotes = async (): Promise<void> => {
     try {

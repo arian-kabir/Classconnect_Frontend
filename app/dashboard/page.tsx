@@ -6,12 +6,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import RoutineOrchestrator from '@/components/RoutineOrchestrator';
 import StaffingLedger from '@/components/StaffingLedger';
+// import StudySchedulerHub from '@/components/StudyScheduler/StudySchedulerHub';
+// import DeadlineAlertCenter from '@/components/StudyScheduler/DeadlineAlertCenter';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'Routine' | 'Notes' | 'Chat'>('Routine');
-  const [showRemainder, setShowRemainder] = useState(true);
+  const [activeTab, setActiveTab] = useState<'Routine' | 'Study Scheduler' | 'Notes' | 'Chat'>('Routine');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -32,7 +33,7 @@ export default function DashboardPage() {
 
   const user = session?.user as any;
   const userName = user?.name || 'Dr. Sarah Chen';
-  const userRole = user?.role === 'teacher' ? 'Lead Instructor' : (user?.role === 'admin' ? 'System Administrator' : (user?.role === 'student' ? 'Student' : 'Student'));
+  const userRole = user?.role === 'teacher' ? 'Lead Instructor' : (user?.role === 'admin' ? 'System Administrator' : (user?.role === 'student_tutor' ? 'Student Tutor' : 'Lead Instructor'));
 
   return (
     <div className="min-h-screen flex bg-[#f8f9fa] text-[#191c1d] font-sans selection:bg-[#002626] selection:text-white">
@@ -85,62 +86,69 @@ export default function DashboardPage() {
             </nav>
           </div>
 
-              {/* Section: Resources */}
-              <div>
-                <h3 className="px-6 text-[11px] font-bold uppercase tracking-wider text-[#707978] mb-3">
-                  Resources & Tools
-                </h3>
-                <nav className="flex flex-col gap-1 px-3">
-                  <Link
-                    href="/admin/allocations"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#002626] bg-[#e2ede6] hover:bg-[#d0e4d8] transition-all group"
-                  >
-                    <span className="text-base">📋</span>
-                    <span>Staffing Ledger (Admin)</span>
-                  </Link>
-
-                  <Link
-                    href="/admin"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
-                  >
-                    <span className="text-base">📊</span>
-                    <span>Routine Intake (Admin)</span>
-                  </Link>
-
-                  <Link
-                    href="#"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group mt-1"
-                  >
-                    <svg className="w-4 h-4 text-[#707978] group-hover:text-[#002626]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                    </svg>
-                    <span>Digital Library</span>
-                  </Link>
-                </nav>
-              </div>
-            </div>
-
-            {/* Sidebar Footer: Quick Sign Out */}
-            <div className="p-4 border-t border-[#e5e7eb]">
-              <button
-                onClick={() => signOut({ callbackUrl: '/auth/login' })}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-[#dc2626] bg-[#fee2e2] hover:bg-[#fecaca] transition-colors"
+          {/* Section: Resources */}
+          <div>
+            <h3 className="px-6 text-[11px] font-bold uppercase tracking-wider text-[#707978] mb-3">
+              Resources & Planning
+            </h3>
+            <nav className="flex flex-col gap-1 px-3">
+              <Link
+                href="/scheduler"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-[#002626] bg-[#e2ede6] hover:bg-[#d0e4d8] transition-all group"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Sign Out
-              </button>
-            </div>
-          </aside>
+                <span className="text-base">⏱️</span>
+                <span>Study Scheduler (M3)</span>
+              </Link>
 
-          {/* =========================================================
-              MAIN PORTAL CONTENT AREA
-              ========================================================= */}
-          <div className="flex-1 flex flex-col min-w-0">
-            {/* Top Navigation Bar */}
-            <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
-                      <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
+              <Link
+                href="/admin/allocations"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
+              >
+                <span className="text-base">📋</span>
+                <span>Staffing Ledger (Admin)</span>
+              </Link>
+
+              <Link
+                href="/admin"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
+              >
+                <span className="text-base">📊</span>
+                <span>Routine Intake (Admin)</span>
+              </Link>
+
+              <Link
+                href="#"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group mt-1"
+              >
+                <svg className="w-4 h-4 text-[#707978] group-hover:text-[#002626]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
+                </svg>
+                <span>Digital Library</span>
+              </Link>
+            </nav>
+          </div>
+        </div>
+
+        {/* Sidebar Footer: Quick Sign Out */}
+        <div className="p-4 border-t border-[#e5e7eb]">
+          <button
+            onClick={() => signOut({ callbackUrl: '/auth/login' })}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-[#dc2626] bg-[#fee2e2] hover:bg-[#fecaca] transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* =========================================================
+          MAIN PORTAL CONTENT AREA
+          ========================================================= */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Navigation Bar */}
+        <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-8">
             <h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
               ClassConnect: Academic Portal
@@ -240,119 +248,108 @@ export default function DashboardPage() {
               </button>
             </div>
           </div>
-            </header>
-            {/* Page Main Content */}
-            <main className="p-8 max-w-7xl mx-auto w-full flex flex-col gap-8">
-              {/* =========================================================
-                  1. 4 ACTION / MODULE CARDS
-                  ========================================================= */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Card 1: Class Schedule */}
-                <div
-                  onClick={() => setActiveTab('Routine')}
-                  className={`rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
-                    activeTab === 'Routine' ? 'bg-[#d0e4d8] ring-2 ring-[#002626]' : 'bg-[#e5ece8]'
-                  }`}
-                >
-                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <span className="font-semibold text-sm text-[#191c1d]">Class Schedule</span>
-                </div>
+        </header>
 
-                {/* Card 2: Canvas */}
-                <div className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]">
-                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
-                  </div>
-                  <span className="font-semibold text-sm text-[#191c1d]">Canvas</span>
-                </div>
-
-                {/* Card 3: Notes and Material */}
-                <Link
-                  href="/notes"
-                  className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]"
-                >
-                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  </div>
-                  <span className="font-semibold text-sm text-[#191c1d]">Notes and Material</span>
-                </Link>
-
-                {/* Card 4: Group Chats */}
-                <div className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]">
-                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                    <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                  </div>
-                  <span className="font-semibold text-sm text-[#191c1d]">Group Chats</span>
-                </div>
+        {/* Page Main Content */}
+        <main className="p-8 max-w-7xl mx-auto w-full flex flex-col gap-8">
+          {/* =========================================================
+              1. 4 ACTION / MODULE CARDS
+              ========================================================= */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Card 1: Class Schedule */}
+            <div
+              onClick={() => setActiveTab('Routine')}
+              className={`rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
+                activeTab === 'Routine' ? 'bg-[#d0e4d8] ring-2 ring-[#002626]' : 'bg-[#e5ece8]'
+              }`}
+            >
+              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
               </div>
+              <span className="font-semibold text-sm text-[#191c1d]">Class Schedule</span>
+            </div>
 
-              {/* =========================================================
-                  2. REMAINDER BOARD BANNER
-                  ========================================================= */}
-              {showRemainder && (
-                <div>
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-[#707978] mb-3">
-                    Remainder Board
-                  </h2>
-                  <div className="bg-[#ebeded] rounded-xl px-5 py-4 flex items-center justify-between border border-[#d9dadb]">
-                    <div className="flex items-center gap-3">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#dc2626] flex-shrink-0" />
-                      <p className="text-sm">
-                        <span className="font-bold text-[#191c1d]">CSE471 - section - 1:</span>{' '}
-                        <span className="text-[#404848]">Assignment 2 - pending - last date: 12/7/24 11am</span>
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setShowRemainder(false)}
-                      className="text-[#707978] hover:text-[#191c1d] transition-colors p-1"
-                      aria-label="Dismiss remainder"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              )}
+            {/* Card 2: Study Scheduler (Module 3) */}
+            <div
+              onClick={() => setActiveTab('Study Scheduler')}
+              className={`rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
+                activeTab === 'Study Scheduler' ? 'bg-[#d0e4d8] ring-2 ring-[#002626]' : 'bg-[#e5ece8]'
+              }`}
+            >
+              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                <span className="text-2xl">⏱️</span>
+              </div>
+              <span className="font-semibold text-sm text-[#191c1d]">Study Scheduler (M3)</span>
+            </div>
 
-              {/* =========================================================
-                  3. ROUTINE ORCHESTRATOR & TIMETABLE DISPLAY
-                  ========================================================= */}
-              {activeTab === 'Routine' && (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-lg font-bold text-[#191c1d] tracking-tight">Academic Routine & Class Schedule</h2>
-                      <p className="text-xs text-[#707978]">Weekly timetable synchronized from university intake</p>
-                    </div>
-                    <Link
-                      href="/admin"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#002626] bg-[#e2ede6] hover:bg-[#d0e4d8] transition-colors"
-                    >
-                      <span>📊</span>
-                      <span>Sync Spreadsheet Routine</span>
-                    </Link>
-                  </div>
-                  <RoutineOrchestrator />
-                </div>
-              )}
+            {/* Card 3: Canvas / Notes */}
+            <Link
+              href="/canvas"
+              className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]"
+            >
+              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <span className="font-semibold text-sm text-[#191c1d]">Notes & Canvas</span>
+            </Link>
 
-              {/* =========================================================
-                  4. STAFFING & ALLOCATION LEDGER (DYNAMIC COMPONENT)
-                  ========================================================= */}
-              <StaffingLedger />
-            </main>
+            {/* Card 4: Group Chats */}
+            <div className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]">
+              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <span className="font-semibold text-sm text-[#191c1d]">Group Chats</span>
+            </div>
           </div>
-        </div>
-      );
-    }
+
+          {/* =========================================================
+              2. DYNAMIC DEADLINE REMAINDER BOARD BANNER
+              ========================================================= */}
+          {/* <DeadlineAlertCenter compact={true} /> */}
+
+          {/* =========================================================
+              3. TAB VIEW 1: ROUTINE ORCHESTRATOR & TIMETABLE DISPLAY
+              ========================================================= */}
+          {activeTab === 'Routine' && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-[#191c1d] tracking-tight">Academic Routine & Class Schedule</h2>
+                  <p className="text-xs text-[#707978]">Weekly timetable synchronized from university intake</p>
+                </div>
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-[#002626] bg-[#e2ede6] hover:bg-[#d0e4d8] transition-colors"
+                >
+                  <span>📊</span>
+                  <span>Sync Spreadsheet Routine</span>
+                </Link>
+              </div>
+              <RoutineOrchestrator />
+            </div>
+          )}
+
+          {/* =========================================================
+              4. TAB VIEW 2: STUDY SCHEDULER (MODULE 3)
+              ========================================================= */}
+          {activeTab === 'Study Scheduler' && (
+            <div className="flex flex-col gap-4">
+              {/* <StudySchedulerHub /> */}
+            </div>
+          )}
+
+          {/* =========================================================
+              5. STAFFING & ALLOCATION LEDGER (DYNAMIC COMPONENT)
+              ========================================================= */}
+          <StaffingLedger />
+        </main>
+      </div>
+    </div>
+  );
+}

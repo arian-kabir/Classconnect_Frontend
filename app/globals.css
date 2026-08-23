@@ -2050,7 +2050,14 @@ body {
   color: var(--muted);
   font-size: 11px;
 }
-
+.canvas-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
 .canvas-hint-dot {
   width: 7px;
   height: 7px;

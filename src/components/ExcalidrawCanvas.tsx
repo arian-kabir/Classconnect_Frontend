@@ -386,7 +386,6 @@ export default function ExcalidrawCanvas({
     }
   };
 
-  // ✅ NEW: Download as PDF function
   const handleDownloadPDF = async (): Promise<void> => {
     if (!canvasRef.current) {
       alert('Canvas not ready for download');
@@ -473,7 +472,7 @@ export default function ExcalidrawCanvas({
           )}
         </div>
 
-        <div className="canvas-actions">
+        <div className="canvas-actions" >
           {/* Save Button */}
           <button
             type="button"
@@ -498,12 +497,12 @@ export default function ExcalidrawCanvas({
             )}
           </button>
 
-          {/* ✅ NEW: Download PDF Button */}
+          {/* Download PDF Button */}
           <button
             type="button"
             onClick={handleDownloadPDF}
             disabled={downloadLoading || !noteId || !hasLoaded}
-            className="canvas-download-button"
+            className="canvas-save-button"
           >
             {downloadLoading ? (
               <>
@@ -517,7 +516,7 @@ export default function ExcalidrawCanvas({
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                Download PDF
+                Download
               </>
             )}
           </button>
