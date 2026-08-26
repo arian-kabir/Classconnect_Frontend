@@ -1,7 +1,12 @@
-// frontend/src/components/ChatRoom.tsx
+// frontend/src/components/ChatRooms.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+
 import { useSocket } from '@/hooks/useSocket';
 import { chatApi } from '@/lib/chat-client';
 
@@ -11,6 +16,8 @@ interface Message {
   sender_name: string;
   sender_id: number;
   sent_at: string;
+  message_type?: string;
+  file_url?: string;
 }
 
 interface ChatRoomProps {
@@ -19,123 +26,476 @@ interface ChatRoomProps {
   roomName: string;
 }
 
-export default function ChatRoom({ roomId, userId, roomName }: ChatRoomProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export default function ChatRoom({
+  roomId,
+  userId,
+  roomName,
+}: ChatRoomProps) {
+  const [messages, setMessages] =
+    useState<Message[]>([]);
+
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
-  const { socket, isConnected } = useSocket(userId);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [uploading, setUploading] = useState(false);
 
-  // Fetch messages
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const data = await chatApi.getMessages(roomId, userId);
-        setMessages(data.messages || []);
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMessages();
-  }, [roomId, userId]);
+  const {
+    socket,
+    isConnected,
+  } = useSocket(userId);
 
-  // Join room on socket connect
+  const messagesEndRef =
+    useRef<HTMLDivElement>(null);
+
+  const fileInputRef =
+    useRef<HTMLInputElement>(null);
+
+  /*
+   * Reset the chat state whenever
+   * the selected room changes.
+   */
   useEffect(() => {
-    if (socket && isConnected) {
-      socket.emit('join-room', { roomId, userId });
+    setInput('');
+    setMessages([]);
+  }, [roomId]);
+
+   /* Load existing messages from the database.*/
+  useEffect(() => {
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+
+      const data =
+        await chatApi.getMessages(
+          roomId,
+          userId
+        );
+
+      const loadedMessages: Message[] =
+        Array.isArray(data.messages)
+          ? data.messages
+              .map((message: Message) => ({
+                ...message,
+                message_id: Number(
+                  message.message_id
+                ),
+                sender_id: Number(
+                  message.sender_id
+                ),
+              }))
+              .sort(
+                (a, b) =>
+                  new Date(
+                    a.sent_at
+                  ).getTime() -
+                  new Date(
+                    b.sent_at
+                  ).getTime()
+              )
+          : [];
+
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error(
+        'Error fetching messages:',
+        error
+      );
+    } finally {
+      setLoading(false);
     }
-  }, [socket, isConnected, roomId, userId]);
+  };
 
-  // Listen for new messages
+  fetchMessages();
+}, [roomId, userId]);
+
+  /*
+   * Join the selected Socket.IO room.
+   */
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !isConnected) {
+      return;
+    }
 
-    socket.on('new-message', (data) => {
-      setMessages(prev => [...prev, data.message]);
+    console.log(
+      `Joining chat room ${roomId}`
+    );
+
+    socket.emit('join-room', {
+      roomId,
+      userId,
     });
 
     return () => {
-      socket.off('new-message');
+      console.log(
+        `Leaving chat room ${roomId}`
+      );
+
+      socket.emit('leave-room', {
+        roomId,
+        userId,
+      });
+    };
+  }, [
+    socket,
+    isConnected,
+    roomId,
+    userId,
+  ]);
+
+  /*
+   * Listen for incoming messages.
+   */
+  useEffect(() => {
+    if (!socket) {
+      return;
+    }
+
+    const handleNewMessage = (
+  data: { message: Message }
+) => {
+  if (!data?.message) {
+    return;
+  }
+
+    const newMessage: Message = {
+      ...data.message,
+      message_id: Number(
+        data.message.message_id
+      ),
+      sender_id: Number(
+        data.message.sender_id
+      ),
+    };
+
+    setMessages((previous) => [
+      ...previous,
+      newMessage,
+    ]);
+  };
+
+    socket.on(
+      'new-message',
+      handleNewMessage
+    );
+
+    return () => {
+      socket.off(
+        'new-message',
+        handleNewMessage
+      );
     };
   }, [socket]);
 
-  // Auto-scroll to bottom
+  /*
+   * Automatically scroll to the newest message.
+   */
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: 'smooth',
+    });
   }, [messages]);
 
-  const sendMessage = async (e: React.FormEvent) => {
+  /*
+   * Send a normal text message.
+   */
+  const sendMessage = (
+    e: React.FormEvent
+  ) => {
     e.preventDefault();
-    if (!input.trim() || !socket) return;
 
-    const messageData = {
+    const text = input.trim();
+
+    if (
+      !text ||
+      !socket ||
+      !isConnected
+    ) {
+      return;
+    }
+
+    socket.emit('send-message', {
       roomId,
       senderId: userId,
-      messageText: input.trim(),
-    };
+      messageText: text,
+    });
 
-    socket.emit('send-message', messageData);
     setInput('');
   };
 
+  /*
+   * Upload an image/file.
+   */
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file =
+      e.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!socket || !isConnected) {
+      console.error(
+        'Cannot upload file: socket is offline'
+      );
+
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      const formData = new FormData();
+
+      formData.append(
+        'file',
+        file
+      );
+
+      formData.append(
+        'userId',
+        userId.toString()
+      );
+
+      formData.append(
+        'roomId',
+        roomId.toString()
+      );
+
+     const API_BASE_URL =
+      process.env.NEXT_PUBLIC_API_URL ||
+      'http://localhost:3001';
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/chat/uploads`,
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
+
+      if (!response.ok) {
+        throw new Error(
+          `Upload failed: ${response.status}`
+        );
+      }
+
+      const data =
+        await response.json();
+
+      if (!data.success) {
+        throw new Error(
+          data.error ||
+            'File upload failed'
+        );
+      }
+
+      const isImage =
+        file.type.startsWith('image/');
+
+      socket.emit('send-message', {
+        roomId,
+        senderId: userId,
+        messageText: isImage
+          ? `[Image] ${file.name}`
+          : `[File] ${file.name}`,
+        messageType: isImage
+          ? 'image'
+          : 'file',
+        fileUrl:
+          data.message.file_url,
+      });
+
+    } catch (error) {
+      console.error(
+        'Upload error:',
+        error
+      );
+    } finally {
+      setUploading(false);
+
+      /*
+       * Reset the input so selecting
+       * the same file again triggers
+       * onChange.
+       */
+      e.target.value = '';
+    }
+  };
+
   if (loading) {
-    return <div className="p-4">Loading messages...</div>;
+    return (
+      <div className="chat-messages-loading">
+        Loading messages...
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col h-full border rounded-lg bg-white">
-      {/* Header */}
-      <div className="p-4 border-b bg-gray-50 rounded-t-lg">
-        <h3 className="font-semibold">{roomName}</h3>
-        <span className={`text-xs ${isConnected ? 'text-green-500' : 'text-red-500'}`}>
-          {isConnected ? '● Online' : '● Offline'}
-        </span>
-      </div>
+    <div className="chat-component">
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 max-h-[400px]">
+      <div className="chat-messages">
+
         {messages.length === 0 ? (
-          <p className="text-gray-500 text-sm">No messages yet. Say hello!</p>
-        ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.message_id}
-              className={`p-2 rounded max-w-[70%] ${
-                msg.sender_id === userId
-                  ? 'bg-blue-500 text-white ml-auto'
-                  : 'bg-gray-100'
-              }`}
-            >
-              <p className="text-xs font-semibold">{msg.sender_name}</p>
-              <p>{msg.message_text}</p>
-              <p className="text-xs opacity-70 mt-1">
-                {new Date(msg.sent_at).toLocaleTimeString()}
-              </p>
+          <div className="chat-no-messages">
+            <div className="chat-no-messages-icon">
+              💬
             </div>
-          ))
+
+            <h3>
+              No messages yet
+            </h3>
+
+            <p>
+              Start the conversation
+              by sending a message.
+            </p>
+          </div>
+        ) : (
+          messages.map((msg) => {
+            const ownMessage =
+              Number(msg.sender_id) === Number(userId);
+
+            return (
+              <div
+                key={msg.message_id}
+                className={`chat-message-row ${
+                  ownMessage
+                    ? 'chat-message-row-own'
+                    : ''
+                }`}
+              >
+                <div
+                  className={`chat-message ${
+                    ownMessage
+                      ? 'chat-message-own'
+                      : 'chat-message-other'
+                  }`}
+                >
+                  {!ownMessage && (
+                    <div className="chat-message-sender">
+                      {msg.sender_name}
+                    </div>
+                  )}
+
+                  {msg.file_url &&
+                  msg.message_type ===
+                    'image' ? (
+                    <div>
+                      <img
+                        src={msg.file_url}
+                        alt={
+                          msg.message_text
+                        }
+                        className="chat-image"
+                      />
+
+                      <p className="chat-file-name">
+                        {msg.message_text}
+                      </p>
+                    </div>
+                  ) : msg.file_url ? (
+                    <a
+                      href={msg.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="chat-file-link"
+                    >
+                      <span>
+                        📎
+                      </span>
+
+                      <span>
+                        {msg.message_text}
+                      </span>
+                    </a>
+                  ) : (
+                    <p className="chat-message-text">
+                      {msg.message_text}
+                    </p>
+                  )}
+
+                  <div className="chat-message-time">
+                    {new Date(
+                      msg.sent_at
+                    ).toLocaleTimeString(
+                      [],
+                      {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
         )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <form onSubmit={sendMessage} className="p-4 border-t flex gap-2">
+      {/* Composer */}
+      <form
+        onSubmit={sendMessage}
+        className="chat-composer"
+      >
+        <button
+          type="button"
+          className="chat-attachment-button"
+          onClick={() =>
+            fileInputRef.current?.click()
+          }
+          disabled={
+            !isConnected ||
+            uploading
+          }
+          title="Attach a file"
+        >
+          {uploading
+            ? '⏳'
+            : '📎'}
+        </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          accept="image/*,.pdf,.doc,.docx,.txt"
+          onChange={
+            handleFileUpload
+          }
+        />
+
         <input
           type="text"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message..."
-          className="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={(e) =>
+            setInput(e.target.value)
+          }
+          placeholder={
+            isConnected
+              ? 'Type a message...'
+              : 'Connecting to chat...'
+          }
+          disabled={!isConnected}
+          className="chat-message-input"
         />
+
         <button
           type="submit"
-          disabled={!isConnected}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+          disabled={
+            !isConnected ||
+            !input.trim()
+          }
+          className="chat-send-button"
         >
-          Send
+          <span>Send</span>
+          <span>➤</span>
         </button>
       </form>
+
     </div>
   );
 }

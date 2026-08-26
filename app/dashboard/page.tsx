@@ -192,14 +192,15 @@ export default function DashboardPage() {
                 Notes
               </Link>
 
-              <button
+              <Link
+                href="/chat"
                 onClick={() => setActiveTab('Chat')}
                 className={`relative py-5 text-sm font-semibold transition-colors ${
                   activeTab === 'Chat' ? 'text-[#191c1d]' : 'text-[#707978] hover:text-[#191c1d]'
                 }`}
               >
                 Chat
-              </button>
+              </Link>
 
               <Link
                 href="/scheduler"

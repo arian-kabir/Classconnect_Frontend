@@ -1,6 +1,5 @@
-// frontend/app/Canvas/page.tsx
-import CanvasPage from '@/src/components/Canvas/page';
-import Page from '@/src/components/Canvas/page';
+// frontend/app/canvas/page.tsx
+import CanvasPage from '@/src/components/canvas/page';
 
 export default function CanvasRoute() {
   return <CanvasPage />;

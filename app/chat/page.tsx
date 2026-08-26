@@ -1,49 +1,11 @@
-// // frontend/app/chat/page.tsx
-// 'use client';
-
-// import { useSession } from 'next-auth/react';
-// import { useRouter } from 'next/navigation';
-// import { useEffect } from 'react';
-
-// export default function ChatPage() {
-//   const { data: session, status } = useSession();
-//   const router = useRouter();
-
-//   useEffect(() => {
-//     if (status === 'unauthenticated') {
-//       router.push('/auth/signin');
-//     }
-//   }, [status, router]);
-
-//   if (status === 'loading') {
-//     return (
-//       <div className="flex items-center justify-center h-screen">
-//         <p>Loading...</p>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="max-w-7xl mx-auto px-8 py-12">
-//       <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">
-//         💬 Chat
-//       </h1>
-//       <p className="text-slate-600 dark:text-slate-300">
-//         Chat functionality coming soon! This is a placeholder page.
-//       </p>
-//     </div>
-//   );
-// }
 // frontend/app/chat/page.tsx
 'use client';
 
-import { useSession } from 'next-auth/react';
-// import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import ChatRoom from '@/components/chatrooms';
-import { chatApi } from '@/lib/chat-client';//
+import { chatApi } from '@/lib/chat-client';
 
-interface ChatRoom {
+interface ChatRoomData {
   room_id: number;
   room_name: string;
   section_id: number;
@@ -51,86 +13,210 @@ interface ChatRoom {
 }
 
 export default function ChatPage() {
-  // const { data: session, status } = useSession();
-  // const router = useRouter();
-  const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null);
+  const [rooms, setRooms] = useState<ChatRoomData[]>([]);
+  const [selectedRoom, setSelectedRoom] =
+    useState<ChatRoomData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // const userId = session?.user?.id ? parseInt(session.user.id) : null;
-    const userId = 1; 
-  // useEffect(() => {
-  //   if (status === 'unauthenticated') {
-  //     router.push('/auth/signin');
-  //   }
-  // }, [status, router]);
+  // Temporary user ID for testing.
+  // Replace this with the authenticated user's ID later.
+  const userId = 1;
 
   useEffect(() => {
-    if (userId) {
-      chatApi.getRooms(userId)
-        .then(data => {
-          setRooms(Array.isArray(data) ? data : []);
-          if (data.length > 0) setSelectedRoom(data[0]);
-        })
-        .catch(err => console.error('Error fetching rooms:', err))
-        .finally(() => setLoading(false));
-    }
+    const loadRooms = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await chatApi.getRooms(userId);
+
+        if (Array.isArray(data)) {
+          setRooms(data);
+
+          if (data.length > 0) {
+            setSelectedRoom(data[0]);
+          }
+        } else {
+          setRooms([]);
+          setError('Unable to load chat rooms.');
+        }
+      } catch (err) {
+        console.error('Error fetching rooms:', err);
+        setError('Unable to load chat rooms. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRooms();
   }, [userId]);
 
-  // if (status === 'loading' || loading) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Loading...</p>
+      <div className="chat-loading-screen">
+        <div className="chat-loading-card">
+          <div className="chat-spinner" />
+          <p>Loading your chats...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="chat-loading-screen">
+        <div className="chat-error-card">
+          <div className="chat-error-icon">!</div>
+
+          <h2>Unable to load chats</h2>
+
+          <p>{error}</p>
+
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="chat-retry-button"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-8 py-12">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">
-        💬 Chat
-      </h1>
+    <div className="chat-page">
+      {/* Sidebar */}
+      <aside className="chat-sidebar">
+        <div className="chat-sidebar-header">
+          <div>
+            <p className="chat-eyebrow">Communication</p>
+            <h1 className="chat-title">Chats</h1>
+          </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Room List */}
-        <div className="md:col-span-1 bg-white rounded-lg border p-4">
-          <h3 className="font-semibold mb-3">Rooms</h3>
-          {rooms.length === 0 ? (
-            <p className="text-gray-500 text-sm">No chat rooms available</p>
-          ) : (
-            <ul className="space-y-2">
-              {rooms.map(room => (
-                <li key={room.room_id}>
-                  <button
-                    onClick={() => setSelectedRoom(room)}
-                    className={`w-full text-left p-2 rounded hover:bg-gray-100 text-sm ${
-                      selectedRoom?.room_id === room.room_id ? 'bg-gray-100' : ''
-                    }`}
-                  >
-                    {room.room_name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="chat-room-count">
+            {rooms.length}
+          </div>
         </div>
 
-        {/* Chat Room */}
-        <div className="md:col-span-3 h-[500px]">
-          {selectedRoom && userId ? (
-            <ChatRoom
-              roomId={selectedRoom.room_id}
-              userId={userId}
-              roomName={selectedRoom.room_name}
-            />
+        <div className="chat-room-section">
+          <div className="chat-section-heading">
+            <span>Rooms</span>
+            <span className="chat-section-count">
+              {rooms.length}
+            </span>
+          </div>
+
+          {rooms.length === 0 ? (
+            <div className="chat-empty-rooms">
+              <div className="chat-empty-icon">💬</div>
+
+              <h3>No chat rooms</h3>
+
+              <p>
+                There are currently no chat rooms
+                available for you.
+              </p>
+            </div>
           ) : (
-            <div className="flex items-center justify-center h-full bg-white rounded-lg border text-gray-500">
-              Select a room to start chatting
+            <div className="chat-room-list">
+              {rooms.map((room) => {
+                const isSelected =
+                  selectedRoom?.room_id === room.room_id;
+
+                return (
+                  <button
+                    key={room.room_id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedRoom(room)
+                    }
+                    className={`chat-room-card ${
+                      isSelected
+                        ? 'chat-room-card-selected'
+                        : ''
+                    }`}
+                  >
+                    <div className="chat-room-icon">
+                      💬
+                    </div>
+
+                    <div className="chat-room-info">
+                      <div className="chat-room-name">
+                        {room.room_name}
+                      </div>
+
+                      <div className="chat-room-preview">
+                        {room.last_message ||
+                          'No messages yet'}
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <div className="chat-room-active-dot" />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
-      </div>
+
+        <div className="chat-sidebar-footer">
+          <span className="chat-online-dot" />
+          <span>Chat workspace</span>
+        </div>
+      </aside>
+
+      {/* Main chat area */}
+      <main className="chat-workspace">
+        {selectedRoom ? (
+          <div className="chat-room-container">
+            <div className="chat-room-header">
+              <div className="chat-room-header-info">
+                <div className="chat-header-icon">
+                  💬
+                </div>
+
+                <div>
+                  <h2>{selectedRoom.room_name}</h2>
+
+                  <p>
+                    Section {selectedRoom.section_id}
+                  </p>
+                </div>
+              </div>
+
+              <div className="chat-connection-status">
+                <span className="chat-online-dot" />
+                Active
+              </div>
+            </div>
+
+            <div className="chat-room-body">
+              <ChatRoom
+                roomId={selectedRoom.room_id}
+                userId={userId}
+                roomName={selectedRoom.room_name}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="chat-empty-workspace">
+            <div className="chat-empty-workspace-icon">
+              💬
+            </div>
+
+            <h2>Select a chat room</h2>
+
+            <p>
+              Choose a room from the sidebar to start
+              chatting with your classmates.
+            </p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
