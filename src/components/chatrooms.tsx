@@ -1,10 +1,11 @@
-// frontend/src/components/ChatRooms.tsx
+// frontend/src/components/ChatRoom.tsx
+
 'use client';
 
 import {
-  useEffect,
-  useRef,
   useState,
+  useEffect,
+  useRef
 } from 'react';
 
 import { useSocket } from '@/hooks/useSocket';
@@ -14,7 +15,7 @@ interface Message {
   message_id: number;
   message_text: string;
   sender_name: string;
-  sender_id: number;
+  sender_id: number | string;
   sent_at: string;
   message_type?: string;
   file_url?: string;
@@ -29,18 +30,24 @@ interface ChatRoomProps {
 export default function ChatRoom({
   roomId,
   userId,
-  roomName,
+  roomName
 }: ChatRoomProps) {
+
   const [messages, setMessages] =
     useState<Message[]>([]);
 
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [input, setInput] =
+    useState('');
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [uploading, setUploading] =
+    useState(false);
 
   const {
     socket,
-    isConnected,
+    isConnected
   } = useSocket(userId);
 
   const messagesEndRef =
@@ -48,129 +55,247 @@ export default function ChatRoom({
 
   const fileInputRef =
     useRef<HTMLInputElement>(null);
+    const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  'http://localhost:3001';
+  
+  
+  const getFileUrl = (fileUrl: string) => {
+  if (fileUrl.startsWith('http://') ||
+      fileUrl.startsWith('https://')) {
+    return fileUrl;
+  }
+
+  return `${API_BASE_URL}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+};
 
   /*
-   * Reset the chat state whenever
-   * the selected room changes.
+   * ------------------------------------------------------------
+   * Reset messages when the room changes.
+   * ------------------------------------------------------------
    */
+
   useEffect(() => {
     setInput('');
     setMessages([]);
   }, [roomId]);
 
-   /* Load existing messages from the database.*/
-  useEffect(() => {
-  const fetchMessages = async () => {
-    try {
-      setLoading(true);
+  /*
+   * ------------------------------------------------------------
+   * Fetch existing messages.
+   * ------------------------------------------------------------
+   */
 
-      const data =
-        await chatApi.getMessages(
-          roomId,
-          userId
+  useEffect(() => {
+
+    const fetchMessages = async () => {
+
+      try {
+
+        setLoading(true);
+
+        const data =
+          await chatApi.getMessages(
+            roomId,
+            userId
+          );
+
+        const loadedMessages =
+          Array.isArray(data.messages)
+            ? data.messages
+            : [];
+
+        /*
+         * Normalize sender IDs and remove duplicate
+         * message IDs.
+         */
+
+        const uniqueMessages =
+          loadedMessages
+            .map((message: Message) => ({
+              ...message,
+              sender_id:
+                Number(message.sender_id),
+              message_id:
+                Number(message.message_id)
+            }))
+            .filter(
+              (message: Message, index: number, array: Message[]) =>
+                array.findIndex(
+                  item =>
+                    item.message_id ===
+                    message.message_id
+                ) === index
+            );
+
+        /*
+         * Always display oldest -> newest.
+         */
+
+        uniqueMessages.sort(
+          (a: Message, b: Message) => {
+            const timeDifference =
+              new Date(a.sent_at).getTime() -
+              new Date(b.sent_at).getTime();
+
+            if (timeDifference !== 0) {
+              return timeDifference;
+            }
+
+            return (
+              Number(a.message_id) -
+              Number(b.message_id)
+            );
+          }
         );
 
-      const loadedMessages: Message[] =
-        Array.isArray(data.messages)
-          ? data.messages
-              .map((message: Message) => ({
-                ...message,
-                message_id: Number(
-                  message.message_id
-                ),
-                sender_id: Number(
-                  message.sender_id
-                ),
-              }))
-              .sort(
-                (a, b) =>
-                  new Date(
-                    a.sent_at
-                  ).getTime() -
-                  new Date(
-                    b.sent_at
-                  ).getTime()
-              )
-          : [];
+        setMessages(uniqueMessages);
 
-      setMessages(loadedMessages);
-    } catch (error) {
-      console.error(
-        'Error fetching messages:',
-        error
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+      } catch (error) {
 
-  fetchMessages();
-}, [roomId, userId]);
+        console.error(
+          'Error fetching messages:',
+          error
+        );
+
+      } finally {
+
+        setLoading(false);
+
+      }
+    };
+
+    fetchMessages();
+
+  }, [roomId, userId]);
 
   /*
+   * ------------------------------------------------------------
    * Join the selected Socket.IO room.
+   * ------------------------------------------------------------
    */
+
   useEffect(() => {
+
     if (!socket || !isConnected) {
       return;
     }
 
-    console.log(
-      `Joining chat room ${roomId}`
+    socket.emit(
+      'join-room',
+      {
+        roomId,
+        userId
+      }
     );
 
-    socket.emit('join-room', {
-      roomId,
-      userId,
-    });
-
     return () => {
-      console.log(
-        `Leaving chat room ${roomId}`
+
+      socket.emit(
+        'leave-room',
+        {
+          roomId,
+          userId
+        }
       );
 
-      socket.emit('leave-room', {
-        roomId,
-        userId,
-      });
     };
+
   }, [
     socket,
     isConnected,
     roomId,
-    userId,
+    userId
   ]);
 
   /*
-   * Listen for incoming messages.
+   * ------------------------------------------------------------
+   * Listen for new messages.
+   * ------------------------------------------------------------
    */
+
   useEffect(() => {
+
     if (!socket) {
       return;
     }
 
-    const handleNewMessage = (
-  data: { message: Message }
-) => {
-  if (!data?.message) {
-    return;
-  }
+    const handleNewMessage =
+      (data: { message: Message }) => {
 
-    const newMessage: Message = {
-      ...data.message,
-      message_id: Number(
-        data.message.message_id
-      ),
-      sender_id: Number(
-        data.message.sender_id
-      ),
-    };
+        if (!data?.message) {
+          return;
+        }
 
-    setMessages((previous) => [
-      ...previous,
-      newMessage,
-    ]);
-  };
+        const newMessage = {
+          ...data.message,
+
+          sender_id:
+            Number(data.message.sender_id),
+
+          message_id:
+            Number(data.message.message_id)
+        };
+
+        /*
+         * Only add the message if it belongs to
+         * the current room.
+         */
+
+        if (
+          Number((newMessage as any).room_id) !==
+            Number(roomId)
+        ) {
+          return;
+        }
+
+        setMessages(prev => {
+
+          /*
+           * Prevent duplicate messages.
+           */
+
+          const alreadyExists =
+            prev.some(
+              message =>
+                Number(message.message_id) ===
+                Number(newMessage.message_id)
+            );
+
+          if (alreadyExists) {
+            return prev;
+          }
+
+          /*
+           * Add the new message and sort again.
+           */
+
+          const updatedMessages = [
+            ...prev,
+            newMessage
+          ];
+
+          updatedMessages.sort(
+            (a, b) => {
+
+              const timeDifference =
+                new Date(a.sent_at).getTime() -
+                new Date(b.sent_at).getTime();
+
+              if (timeDifference !== 0) {
+                return timeDifference;
+              }
+
+              return (
+                Number(a.message_id) -
+                Number(b.message_id)
+              );
+            }
+          );
+
+          return updatedMessages;
+        });
+      };
 
     socket.on(
       'new-message',
@@ -178,55 +303,77 @@ export default function ChatRoom({
     );
 
     return () => {
+
       socket.off(
         'new-message',
         handleNewMessage
       );
+
     };
-  }, [socket]);
+
+  }, [socket, roomId]);
 
   /*
-   * Automatically scroll to the newest message.
+   * ------------------------------------------------------------
+   * Auto-scroll to newest message.
+   * ------------------------------------------------------------
    */
+
   useEffect(() => {
+
     messagesEndRef.current?.scrollIntoView({
-      behavior: 'smooth',
+      behavior: 'smooth'
     });
+
   }, [messages]);
 
   /*
-   * Send a normal text message.
+   * ------------------------------------------------------------
+   * Send normal text message.
+   * ------------------------------------------------------------
    */
-  const sendMessage = (
+
+  const sendMessage = async (
     e: React.FormEvent
   ) => {
+
     e.preventDefault();
 
-    const text = input.trim();
+    const trimmedInput =
+      input.trim();
 
     if (
-      !text ||
+      !trimmedInput ||
       !socket ||
       !isConnected
     ) {
       return;
     }
 
-    socket.emit('send-message', {
-      roomId,
-      senderId: userId,
-      messageText: text,
-    });
+    socket.emit(
+      'send-message',
+      {
+        roomId,
+        senderId: userId,
+        messageText: trimmedInput,
+        messageType: 'text'
+      }
+    );
 
     setInput('');
+
   };
 
   /*
-   * Upload an image/file.
+   * ------------------------------------------------------------
+   * Upload attachment.
+   * ------------------------------------------------------------
    */
+
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
+
     const file =
       e.target.files?.[0];
 
@@ -234,18 +381,20 @@ export default function ChatRoom({
       return;
     }
 
-    if (!socket || !isConnected) {
+    if (!isConnected) {
       console.error(
-        'Cannot upload file: socket is offline'
+        'Cannot upload attachment: socket is offline.'
       );
 
       return;
     }
 
     try {
+
       setUploading(true);
 
-      const formData = new FormData();
+      const formData =
+        new FormData();
 
       formData.append(
         'file',
@@ -254,15 +403,15 @@ export default function ChatRoom({
 
       formData.append(
         'userId',
-        userId.toString()
+        String(userId)
       );
 
       formData.append(
         'roomId',
-        roomId.toString()
+        String(roomId)
       );
 
-     const API_BASE_URL =
+      const API_BASE_URL =
       process.env.NEXT_PUBLIC_API_URL ||
       'http://localhost:3001';
 
@@ -270,180 +419,296 @@ export default function ChatRoom({
       `${API_BASE_URL}/api/chat/uploads`,
       {
         method: 'POST',
-        body: formData,
+        body: formData
       }
     );
 
       if (!response.ok) {
+
         throw new Error(
           `Upload failed: ${response.status}`
         );
+
       }
 
       const data =
         await response.json();
 
-      if (!data.success) {
+      if (!data.success || !data.message) {
+
         throw new Error(
           data.error ||
-            'File upload failed'
+          'Upload failed'
         );
+
       }
 
-      const isImage =
-        file.type.startsWith('image/');
+      const uploadedMessage = {
+        ...data.message,
+        sender_id: Number(data.message.sender_id),
+        message_id: Number(data.message.message_id)
+      };
 
-      socket.emit('send-message', {
-        roomId,
-        senderId: userId,
-        messageText: isImage
-          ? `[Image] ${file.name}`
-          : `[File] ${file.name}`,
-        messageType: isImage
-          ? 'image'
-          : 'file',
-        fileUrl:
-          data.message.file_url,
+      setMessages(prev => {
+        const alreadyExists = prev.some(
+          message =>
+            Number(message.message_id) ===
+            Number(uploadedMessage.message_id)
+        );
+
+        if (alreadyExists) {
+          return prev;
+        }
+
+        const updatedMessages = [
+          ...prev,
+          uploadedMessage
+        ];
+
+        updatedMessages.sort((a, b) => {
+          const timeDifference =
+            new Date(a.sent_at).getTime() -
+            new Date(b.sent_at).getTime();
+
+          if (timeDifference !== 0) {
+            return timeDifference;
+          }
+
+          return (
+            Number(a.message_id) -
+            Number(b.message_id)
+          );
+        });
+
+        return updatedMessages;
       });
 
     } catch (error) {
+
       console.error(
         'Upload error:',
         error
       );
+
     } finally {
+
       setUploading(false);
 
       /*
-       * Reset the input so selecting
-       * the same file again triggers
-       * onChange.
+       * Clear the input so selecting the same
+       * file again triggers onChange.
        */
-      e.target.value = '';
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
     }
+
   };
 
+  /*
+   * ------------------------------------------------------------
+   * Loading state.
+   * ------------------------------------------------------------
+   */
+
   if (loading) {
+
     return (
-      <div className="chat-messages-loading">
+      <div className="p-4 text-gray-500">
         Loading messages...
       </div>
     );
+
   }
 
+  /*
+   * ------------------------------------------------------------
+   * Chat UI.
+   * ------------------------------------------------------------
+   */
+
   return (
-    <div className="chat-component">
+
+    <div className="flex flex-col h-full border rounded-lg bg-white overflow-hidden">
+
+      {/* Header */}
+
+      <div className="p-4 border-b bg-gray-50 rounded-t-lg flex justify-between items-center">
+
+        <div>
+
+          <h3 className="font-semibold text-gray-900">
+            {roomName}
+          </h3>
+
+          <p className="text-xs text-gray-500 mt-1">
+            {messages.length} message
+            {messages.length !== 1 ? 's' : ''}
+          </p>
+
+        </div>
+
+        <span
+          className={`text-xs font-medium ${
+            isConnected
+              ? 'text-green-500'
+              : 'text-red-500'
+          }`}
+        >
+          {isConnected
+            ? '● Online'
+            : '● Offline'}
+        </span>
+
+      </div>
 
       {/* Messages */}
-      <div className="chat-messages">
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
 
         {messages.length === 0 ? (
-          <div className="chat-no-messages">
-            <div className="chat-no-messages-icon">
-              💬
-            </div>
 
-            <h3>
-              No messages yet
-            </h3>
+          <p className="text-gray-500 text-sm text-center py-8">
+            No messages yet. Say hello!
+          </p>
 
-            <p>
-              Start the conversation
-              by sending a message.
-            </p>
-          </div>
         ) : (
+
           messages.map((msg) => {
-            const ownMessage =
-              Number(msg.sender_id) === Number(userId);
+
+            /*
+             * Convert both values to numbers.
+             *
+             * This is important because MySQL can return
+             * sender_id as a string while userId is a number.
+             */
+
+            const isOwnMessage =
+              Number(msg.sender_id) ===
+              Number(userId);
 
             return (
+
               <div
                 key={msg.message_id}
-                className={`chat-message-row ${
-                  ownMessage
-                    ? 'chat-message-row-own'
-                    : ''
+                className={`flex ${
+                  isOwnMessage
+                    ? 'justify-end'
+                    : 'justify-start'
                 }`}
               >
+
                 <div
-                  className={`chat-message ${
-                    ownMessage
-                      ? 'chat-message-own'
-                      : 'chat-message-other'
+                  className={`p-3 rounded-lg max-w-[75%] ${
+                    isOwnMessage
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-800'
                   }`}
                 >
-                  {!ownMessage && (
-                    <div className="chat-message-sender">
+
+                  {!isOwnMessage && (
+                    <p className="text-xs font-semibold mb-1">
                       {msg.sender_name}
-                    </div>
+                    </p>
                   )}
 
-                  {msg.file_url &&
-                  msg.message_type ===
-                    'image' ? (
-                    <div>
-                      <img
-                        src={msg.file_url}
-                        alt={
-                          msg.message_text
-                        }
-                        className="chat-image"
-                      />
+                  {/* Image */}
 
-                      <p className="chat-file-name">
-                        {msg.message_text}
-                      </p>
-                    </div>
-                  ) : msg.file_url ? (
+                  {msg.message_type === 'image' &&
+                    msg.file_url ? (
+
+                      <div>
+                        <a
+                          href={getFileUrl(msg.file_url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <img
+                            src={getFileUrl(msg.file_url)}
+                            alt={msg.message_text || 'Uploaded image'}
+                            className="max-w-xs max-h-64 rounded-lg mt-1 cursor-pointer"
+                          />
+                        </a>
+
+                        <p className="text-sm mt-1 break-words">
+                          {msg.message_text}
+                        </p>
+                      </div>
+
+                    ) : msg.file_url ? (
+
+                    /* File */
+
                     <a
-                      href={msg.file_url}
+                      href={getFileUrl(msg.file_url)}
+                      download
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="chat-file-link"
+                      className={`flex items-center gap-2 underline ${
+                        isOwnMessage
+                          ? 'text-white'
+                          : 'text-blue-600'
+                      }`}
                     >
-                      <span>
-                        📎
-                      </span>
+                      <span>📎</span>
 
                       <span>
                         {msg.message_text}
                       </span>
                     </a>
+
                   ) : (
-                    <p className="chat-message-text">
+
+                    /* Normal text */
+
+                    <p className="break-words">
                       {msg.message_text}
                     </p>
+
                   )}
 
-                  <div className="chat-message-time">
+                  <p
+                    className={`text-xs opacity-70 mt-1 ${
+                      isOwnMessage
+                        ? 'text-white'
+                        : 'text-gray-500'
+                    }`}
+                  >
                     {new Date(
                       msg.sent_at
-                    ).toLocaleTimeString(
-                      [],
-                      {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      }
-                    )}
-                  </div>
+                    ).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+
                 </div>
+
               </div>
+
             );
+
           })
+
         )}
 
         <div ref={messagesEndRef} />
+
       </div>
 
-      {/* Composer */}
+      {/* Input */}
+
       <form
         onSubmit={sendMessage}
-        className="chat-composer"
+        className="p-4 border-t flex gap-2 bg-white"
       >
+
+        {/* Attachment button */}
+
         <button
           type="button"
-          className="chat-attachment-button"
           onClick={() =>
             fileInputRef.current?.click()
           }
@@ -451,22 +716,21 @@ export default function ChatRoom({
             !isConnected ||
             uploading
           }
+          className="w-10 h-10 flex-shrink-0 flex items-center justify-center border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
           title="Attach a file"
         >
-          {uploading
-            ? '⏳'
-            : '📎'}
+          {uploading ? '...' : '📎'}
         </button>
 
         <input
           ref={fileInputRef}
           type="file"
+          onChange={handleFileUpload}
           className="hidden"
           accept="image/*,.pdf,.doc,.docx,.txt"
-          onChange={
-            handleFileUpload
-          }
         />
+
+        {/* Message input */}
 
         <input
           type="text"
@@ -477,11 +741,13 @@ export default function ChatRoom({
           placeholder={
             isConnected
               ? 'Type a message...'
-              : 'Connecting to chat...'
+              : 'Connecting...'
           }
+          className="flex-1 min-w-0 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={!isConnected}
-          className="chat-message-input"
         />
+
+        {/* Send */}
 
         <button
           type="submit"
@@ -489,13 +755,14 @@ export default function ChatRoom({
             !isConnected ||
             !input.trim()
           }
-          className="chat-send-button"
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          <span>Send</span>
-          <span>➤</span>
+          Send
         </button>
+
       </form>
 
     </div>
+
   );
 }

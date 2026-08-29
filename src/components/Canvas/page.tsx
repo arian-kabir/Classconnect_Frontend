@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react';
 import ShareModal from '@/components/ShareModal';
 import ExcalidrawCanvas from '@/components/ExcalidrawCanvas';
-
-
+import Link from 'next/link';
+import { signOut, useSession } from 'next-auth/react';
 
 interface Note {
   id: number;
@@ -27,6 +27,27 @@ export default function CanvasPage() {
   
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [sharingNoteId, setSharingNoteId] = useState<number | null>(null);
+
+
+//  const [activeTab, setActiveTab] = useState('Chat');
+  const [activeTab, setActiveTab] = useState('Routine');
+  const { data: session } = useSession();
+
+  // const userId = 1;
+  const userId = session?.user?.id
+    ? Number(session.user.id)
+    : null;
+
+  const userName =
+    session?.user?.name || 'User';
+
+  const userRole =
+    (session?.user as any)?.role || 'Student';
+
+  const userImage =
+    session?.user?.image || null;
+
+
     
   const handleShareNote = async (noteId: number) => {
       setSharingNoteId(noteId);
@@ -60,17 +81,13 @@ export default function CanvasPage() {
   };
 
 
-
-  const userId = 1;
-  const sectionId = 1;
-
   const fetchNotes = async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
 
       const res = await fetch(
-        `/api/canvas?userId=${userId}&sectionId=${sectionId}`
+        `/api/canvas?userId=${userId}`
       );
 
       if (!res.ok) {
@@ -106,7 +123,6 @@ export default function CanvasPage() {
           content: { type: 'excalidraw', elements: [] },
           text_content: '',
           user_id: userId,
-          section_id: sectionId,
         }),
       });
 
@@ -192,8 +208,105 @@ export default function CanvasPage() {
   }
 
   return (
-    <div className="notes-page">
+    <div>
+      {/*---------------------navbar----------------------*/}
+      <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
+
+        <div className="flex items-center gap-8">
+          <h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
+            ClassConnect: Academic Portal
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-6">
+
+          <nav className="flex items-center gap-5">
+
+            <button
+              onClick={() => setActiveTab('Routine')}
+              className={`relative py-5 text-sm font-semibold transition-colors ${
+                activeTab === 'Routine'
+                  ? 'text-[#191c1d]'
+                  : 'text-[#707978] hover:text-[#191c1d]'
+              }`}
+            >
+              Routine
+
+              {activeTab === 'Routine' && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002626]" />
+              )}
+            </button>
+
+            <Link
+              href="/chat"
+              onClick={() => setActiveTab('Chat')}
+              className={`relative py-5 text-sm font-semibold transition-colors ${
+                activeTab === 'Chat'
+                  ? 'text-[#191c1d]'
+                  : 'text-[#707978] hover:text-[#191c1d]'
+              }`}
+            >
+              Chat
+            </Link>
+          </nav>
+
+          {/* Profile */}
+          <div className="flex items-center gap-4 pl-4 border-l border-[#e5e7eb]">
+
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-bold text-[#191c1d] leading-none">
+                {userName}
+              </p>
+
+              <p className="text-xs text-[#707978] mt-1">
+                {userRole}
+              </p>
+            </div>
+
+            {userImage ? (
+              <img
+                src={userImage}
+                alt={userName}
+                className="w-9 h-9 rounded-full border border-[#c0c8c7] object-cover"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-[#dbe5df] border border-[#c0c8c7] flex items-center justify-center text-sm font-bold text-[#002626]">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+            )}
+
+            <button
+              onClick={() =>
+                signOut({
+                  callbackUrl: '/auth/login'
+                })
+              }
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[#dc2626] bg-[#fee2e2] hover:bg-[#fecaca] transition-colors"
+              title="Sign out of ClassConnect"
+            >
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
+              </svg>
+
+              Logout
+            </button>
+
+          </div>
+        </div>
+      </header>
+       {/*-------------------------------------------*/}
       {/* Sidebar */}
+      <div className="notes-page">
       <aside className="notes-sidebar">
         <div className="notes-sidebar-header">
           <div>
@@ -442,6 +555,7 @@ export default function CanvasPage() {
             onClose={() => setShareModalOpen(false)}
             onShare={handleConfirmShare}
         />
+    </div>
     </div>
   );
 }
