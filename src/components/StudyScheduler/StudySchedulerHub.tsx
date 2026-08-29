@@ -520,44 +520,7 @@ export default function StudySchedulerHub() {
                 );
               })}
 
-              {/* 4. CONTEXTUAL FREE GAP SLOTS (SMART STUDY WINDOWS) */}
-              {filterView !== 'classes' && currentDayData.free_slots.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-dashed border-[#d9dadb]">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800 mb-3 flex items-center gap-1.5">
-                    <span>💡</span>
-                    <span>Identified Open Study Windows for {selectedDay}</span>
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {currentDayData.free_slots.map((gap, gIdx) => (
-                      <div
-                        key={gIdx}
-                        className="bg-emerald-50/70 border-2 border-dashed border-emerald-300 rounded-xl p-4 flex items-center justify-between hover:bg-emerald-50 transition-all group"
-                      >
-                        <div>
-                          <p className="text-xs font-bold text-emerald-950">{gap.label}</p>
-                          <p className="text-[11px] text-emerald-700 mt-0.5">
-                            No class scheduled in this {gap.duration_minutes} min window
-                          </p>
-                        </div>
-                        <button
-                          onClick={() =>
-                            handleOpenModal({
-                              day: selectedDay,
-                              startTime: gap.start_time.slice(0, 5),
-                              endTime: gap.end_time.slice(0, 5),
-                            })
-                          }
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-800 text-white hover:bg-emerald-900 shadow-sm transition-all flex items-center gap-1 flex-shrink-0"
-                          title="Schedule study session in this free slot"
-                        >
-                          <span>➕</span>
-                          <span>Fill Slot</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+
             </div>
           )}
         </div>
