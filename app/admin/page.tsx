@@ -5,10 +5,12 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * Accessible only to admin-role users (enforced by session check + redirect).
  * Houses the Spreadsheet Routine Intake panel and other admin tools.
+ * Redesigned to match the Academic Nexus global design system.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import SpreadsheetIntakePanel from "@/components/SpreadsheetIntakePanel";
@@ -19,7 +21,7 @@ type AdminTab = "intake" | "staffing" | "overview";
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<AdminTab>("staffing");
+  const [activeTab, setActiveTab] = useState<AdminTab>("intake");
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -29,345 +31,242 @@ export default function AdminPage() {
 
   if (status === "loading") {
     return (
-      <div style={styles.loading}>
-        <div style={styles.spinner} />
-        <p style={styles.loadingText}>Loading Admin Portal…</p>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-[#f8f9fa]">
+        <div className="w-9 h-9 rounded-full border-[3px] border-[#002626] border-t-transparent animate-spin" />
+        <p className="text-sm font-semibold text-[#51625b]">Loading Admin Portal…</p>
       </div>
     );
   }
 
   const user = session?.user as any;
+  const userName = user?.name || "Administrator";
+  const userEmail = user?.email || "";
+
+  const pageTitle =
+    activeTab === "staffing"
+      ? "Cross-Role Section Staffing & Allocation Ledger"
+      : activeTab === "intake"
+      ? "Spreadsheet Routine Intake"
+      : "System Overview";
+
+  const pageBreadcrumb =
+    activeTab === "staffing"
+      ? "Staffing Ledger"
+      : activeTab === "intake"
+      ? "Routine Intake"
+      : "Overview";
 
   return (
-    <div style={styles.root}>
-      {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-      <aside style={styles.sidebar}>
-        {/* Logo */}
-        <div style={styles.sidebarLogo}>
-          <span style={styles.logoIcon}>🎓</span>
-          <span style={styles.logoText}>ClassConnect</span>
+    <div className="min-h-screen flex bg-[#f8f9fa] text-[#191c1d] font-sans selection:bg-[#002626] selection:text-white">
+
+      {/* =========================================================
+          LEFT SIDEBAR: COURSE NAVIGATOR & WORKSPACE TOOLS
+          ========================================================= */}
+      <aside className="w-64 bg-[#f3f4f5] border-r border-[#e5e7eb] flex flex-col flex-shrink-0 min-h-screen sticky top-0 h-screen">
+
+        {/* Sidebar Header — Brand Logo */}
+        <div className="h-16 px-6 flex items-center gap-3 border-b border-[#e5e7eb]">
+          <span className="text-2xl">🎓</span>
+          <div className="flex flex-col leading-none">
+            <span className="font-extrabold text-base text-[#002626] tracking-tight">ClassConnect</span>
+            <span className="text-[10px] font-semibold text-[#51625b] tracking-wider uppercase">Admin Portal</span>
+          </div>
         </div>
 
-        {/* Nav */}
-        <nav style={styles.nav}>
-          <p style={styles.navLabel}>Admin Tools</p>
-          <NavItem
-            icon="📋"
-            label="Staffing Ledger"
-            active={activeTab === "staffing"}
-            onClick={() => setActiveTab("staffing")}
-            id="nav-staffing"
-          />
-          <NavItem
-            icon="📊"
-            label="Routine Intake"
-            active={activeTab === "intake"}
-            onClick={() => setActiveTab("intake")}
-            id="nav-intake"
-          />
-          <NavItem
-            icon="🗂️"
-            label="Overview"
-            active={activeTab === "overview"}
-            onClick={() => setActiveTab("overview")}
-            id="nav-overview"
-          />
-        </nav>
+        {/* Navigation Sections */}
+        <div className="flex-1 py-6 flex flex-col gap-6 overflow-y-auto">
 
-        {/* User */}
-        <div style={styles.sidebarUser}>
-          <div style={styles.userAvatar}>
-            {user?.name?.charAt(0) ?? "A"}
+          {/* Section 1: Admin Tools */}
+          <div>
+            <h3 className="px-6 text-[11px] font-bold uppercase tracking-wider text-[#707978] mb-3">
+              Admin Tools
+            </h3>
+            <nav className="flex flex-col gap-1 px-3">
+              <button
+                onClick={() => setActiveTab("intake")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-left transition-all ${
+                  activeTab === "intake"
+                    ? "text-[#002626] bg-[#e2ede6] font-bold"
+                    : "text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea]"
+                }`}
+              >
+                <span className="text-base">📊</span>
+                <span>Routine Intake</span>
+                {activeTab === "intake" && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#002626]" />
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab("staffing")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-left transition-all ${
+                  activeTab === "staffing"
+                    ? "text-[#002626] bg-[#e2ede6] font-bold"
+                    : "text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea]"
+                }`}
+              >
+                <span className="text-base">📋</span>
+                <span>Staffing Ledger</span>
+                {activeTab === "staffing" && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#002626]" />
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab("overview")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-left transition-all ${
+                  activeTab === "overview"
+                    ? "text-[#002626] bg-[#e2ede6] font-bold"
+                    : "text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea]"
+                }`}
+              >
+                <span className="text-base">🗂️</span>
+                <span>System Overview</span>
+                {activeTab === "overview" && (
+                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#002626]" />
+                )}
+              </button>
+            </nav>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={styles.userName}>{user?.name ?? "Admin"}</p>
-            <p style={styles.userRole}>System Administrator</p>
+
+          {/* Section 2: Portal Navigation */}
+          <div>
+            <h3 className="px-6 text-[11px] font-bold uppercase tracking-wider text-[#707978] mb-3">
+              Portal Navigation
+            </h3>
+            <nav className="flex flex-col gap-1 px-3">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
+              >
+                <span className="text-base">🏠</span>
+                <span>Student Dashboard</span>
+              </Link>
+
+              <Link
+                href="/scheduler"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
+              >
+                <span className="text-base">⏱️</span>
+                <span>Study Scheduler</span>
+              </Link>
+
+              <Link
+                href="/email-hub"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
+              >
+                <span className="text-base">✉️</span>
+                <span>Email Engine</span>
+              </Link>
+            </nav>
           </div>
-          <button
-            id="admin-logout-btn"
-            style={styles.logoutBtn}
-            onClick={() => signOut({ callbackUrl: "/" })}
-            title="Sign out"
-          >
-            ↩
-          </button>
+        </div>
+
+        {/* Sidebar Footer: User Info + Sign Out */}
+        <div className="border-t border-[#e5e7eb]">
+          <div className="px-4 py-3 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#dbe5df] border border-[#c0c8c7] flex items-center justify-center text-sm font-bold text-[#002626] flex-shrink-0">
+              {userName.charAt(0)}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-[#191c1d] truncate leading-tight">{userName}</p>
+              <p className="text-[10px] text-[#707978] truncate">System Administrator</p>
+            </div>
+          </div>
+          <div className="px-4 pb-4">
+            <button
+              id="admin-logout-btn"
+              onClick={() => signOut({ callbackUrl: "/auth/login" })}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-[#dc2626] bg-[#fee2e2] hover:bg-[#fecaca] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Sign Out
+            </button>
+          </div>
         </div>
       </aside>
 
-      {/* ── Main content ─────────────────────────────────────────────────── */}
-      <main style={styles.main}>
-        {/* Top bar */}
-        <header style={styles.topBar}>
-          <div>
-            <h1 style={styles.pageTitle}>
-              {activeTab === "staffing"
-                ? "📋 Cross-Role Section Staffing & Allocation Ledger"
-                : activeTab === "intake"
-                ? "📊 Spreadsheet Routine Intake"
-                : "🗂️ Overview"}
-            </h1>
-            <p style={styles.pageBreadcrumb}>
-              Admin Portal / {activeTab === "staffing" ? "Staffing Ledger" : activeTab === "intake" ? "Routine Intake" : "Overview"}
-            </p>
+      {/* =========================================================
+          MAIN CONTENT AREA
+          ========================================================= */}
+      <div className="flex-1 flex flex-col min-w-0">
+
+        {/* Top Navigation Bar */}
+        <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="font-bold text-base text-[#191c1d] tracking-tight leading-none">
+                {pageTitle}
+              </h1>
+              <p className="text-xs text-[#707978] mt-0.5">
+                Admin Portal / {pageBreadcrumb}
+              </p>
+            </div>
           </div>
-          <button
-            style={styles.dashboardBtn}
-            onClick={() => router.push("/dashboard")}
-          >
-            ← Back to Dashboard
-          </button>
+
+          <div className="flex items-center gap-4">
+            {/* Admin Tab Pills in header */}
+            <nav className="flex items-center gap-1 bg-[#f3f4f5] rounded-xl p-1">
+              {(["intake", "staffing", "overview"] as AdminTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    activeTab === tab
+                      ? "bg-white text-[#002626] shadow-sm border border-[#e5e7eb]"
+                      : "text-[#707978] hover:text-[#191c1d]"
+                  }`}
+                >
+                  {tab === "intake" ? "📊 Intake" : tab === "staffing" ? "📋 Staffing" : "🗂️ Overview"}
+                </button>
+              ))}
+            </nav>
+
+            {/* Profile + Logout */}
+            <div className="flex items-center gap-3 pl-4 border-l border-[#e5e7eb]">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-bold text-[#191c1d] leading-none">{userName}</p>
+                <p className="text-xs text-[#707978] mt-1">System Administrator</p>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-[#dbe5df] border border-[#c0c8c7] flex items-center justify-center text-sm font-bold text-[#002626]">
+                {userName.charAt(0)}
+              </div>
+              <button
+                onClick={() => signOut({ callbackUrl: "/auth/login" })}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-[#dc2626] bg-[#fee2e2] hover:bg-[#fecaca] transition-colors"
+                title="Sign out"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
+            </div>
+          </div>
         </header>
 
-        {/* Content */}
-        <div style={styles.content}>
+        {/* Page Content */}
+        <main className="flex-1 p-8 overflow-y-auto">
           {activeTab === "staffing" && <StaffingLedger />}
           {activeTab === "intake" && <SpreadsheetIntakePanel />}
           {activeTab === "overview" && <OverviewPlaceholder />}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
 
-// ── Placeholder for future overview tab ───────────────────────────────────────
+// ── Placeholder for future overview tab ──────────────────────────────────────
 function OverviewPlaceholder() {
   return (
-    <div style={styles.placeholder}>
-      <span style={{ fontSize: "3rem" }}>🔧</span>
-      <p style={styles.placeholderText}>More admin tools coming soon.</p>
+    <div className="flex flex-col items-center justify-center gap-4 py-24 text-[#707978]">
+      <span className="text-5xl">🔧</span>
+      <div className="text-center">
+        <p className="text-base font-bold text-[#191c1d]">More Admin Tools Coming Soon</p>
+        <p className="text-sm text-[#51625b] mt-1">System analytics and overview will be available here.</p>
+      </div>
     </div>
   );
 }
-
-// ── Nav Item ──────────────────────────────────────────────────────────────────
-function NavItem({
-  icon,
-  label,
-  active,
-  onClick,
-  id,
-}: {
-  icon: string;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  id: string;
-}) {
-  return (
-    <button
-      id={id}
-      style={{
-        ...styles.navItem,
-        ...(active ? styles.navItemActive : styles.navItemInactive),
-      }}
-      onClick={onClick}
-    >
-      <span style={styles.navIcon}>{icon}</span>
-      {label}
-    </button>
-  );
-}
-
-// ── Styles ────────────────────────────────────────────────────────────────────
-const styles: Record<string, React.CSSProperties> = {
-  root: {
-    display: "flex",
-    minHeight: "100vh",
-    background: "#0d1117",
-    fontFamily: "'Hanken Grotesk', 'Inter', sans-serif",
-  },
-  loading: {
-    minHeight: "100vh",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "1rem",
-    background: "#0d1117",
-  },
-  spinner: {
-    width: 36,
-    height: 36,
-    border: "3px solid rgba(0,180,150,0.2)",
-    borderTopColor: "#00b496",
-    borderRadius: "50%",
-    animation: "spin 0.8s linear infinite",
-  },
-  loadingText: {
-    color: "#64748b",
-    fontSize: "0.9rem",
-    margin: 0,
-  },
-
-  // Sidebar
-  sidebar: {
-    width: 240,
-    background: "#0a0f14",
-    borderRight: "1px solid rgba(255,255,255,0.06)",
-    display: "flex",
-    flexDirection: "column",
-    padding: "1.5rem 1rem",
-    flexShrink: 0,
-    position: "sticky" as const,
-    top: 0,
-    height: "100vh",
-  },
-  sidebarLogo: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.6rem",
-    marginBottom: "2rem",
-    padding: "0 0.5rem",
-  },
-  logoIcon: { fontSize: "1.4rem" },
-  logoText: {
-    fontWeight: 800,
-    fontSize: "1rem",
-    color: "#e2f8f5",
-    letterSpacing: "-0.03em",
-  },
-  nav: { flex: 1 },
-  navLabel: {
-    fontSize: "0.68rem",
-    fontWeight: 700,
-    color: "#475569",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    margin: "0 0 0.5rem 0.5rem",
-  },
-  navItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.65rem",
-    width: "100%",
-    padding: "0.55rem 0.75rem",
-    borderRadius: "0.5rem",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "0.88rem",
-    fontWeight: 600,
-    marginBottom: "0.25rem",
-    transition: "all 0.15s",
-    textAlign: "left" as const,
-  },
-  navItemActive: {
-    background: "rgba(0,38,38,0.8)",
-    color: "#94e2c8",
-    outline: "1px solid rgba(0,180,150,0.2)",
-  },
-  navItemInactive: {
-    background: "transparent",
-    color: "#64748b",
-  },
-  navIcon: { fontSize: "1rem" },
-  sidebarUser: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.75rem",
-    padding: "0.75rem",
-    borderTop: "1px solid rgba(255,255,255,0.06)",
-    marginTop: "auto",
-  },
-  userAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #002626, #004040)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#94e2c8",
-    fontWeight: 700,
-    fontSize: "0.85rem",
-    flexShrink: 0,
-  },
-  userName: {
-    margin: 0,
-    fontSize: "0.82rem",
-    fontWeight: 600,
-    color: "#cbd5e1",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap" as const,
-  },
-  userRole: {
-    margin: 0,
-    fontSize: "0.7rem",
-    color: "#475569",
-  },
-  logoutBtn: {
-    background: "transparent",
-    border: "none",
-    color: "#475569",
-    cursor: "pointer",
-    fontSize: "1rem",
-    padding: "0.2rem 0.4rem",
-    borderRadius: "0.25rem",
-    flexShrink: 0,
-    transition: "color 0.15s",
-  },
-
-  // Main
-  main: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    minWidth: 0,
-  },
-  topBar: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "1.25rem 2rem",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
-    background: "rgba(0,0,0,0.2)",
-    backdropFilter: "blur(8px)",
-    position: "sticky" as const,
-    top: 0,
-    zIndex: 10,
-  },
-  pageTitle: {
-    margin: 0,
-    fontSize: "1.15rem",
-    fontWeight: 700,
-    color: "#e2e8f0",
-    letterSpacing: "-0.02em",
-  },
-  pageBreadcrumb: {
-    margin: "0.15rem 0 0",
-    fontSize: "0.75rem",
-    color: "#475569",
-  },
-  dashboardBtn: {
-    padding: "0.5rem 1rem",
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "0.5rem",
-    color: "#94a3b8",
-    fontSize: "0.82rem",
-    cursor: "pointer",
-    fontWeight: 600,
-    transition: "all 0.15s",
-  },
-  content: {
-    flex: 1,
-    padding: "1.5rem 2rem",
-    overflowY: "auto" as const,
-  },
-
-  // Placeholder
-  placeholder: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "1rem",
-    padding: "4rem",
-    color: "#475569",
-  },
-  placeholderText: {
-    margin: 0,
-    fontSize: "1rem",
-    color: "#475569",
-  },
-};

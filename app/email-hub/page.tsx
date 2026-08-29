@@ -1,13 +1,13 @@
-// app/scheduler/page.tsx
+// app/email-hub/page.tsx
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import StudySchedulerHub from '@/components/StudyScheduler/StudySchedulerHub';
+import EmailTemplateEngine from '@/components/EmailHub/EmailTemplateEngine';
 
-export default function SchedulerPage() {
+export default function EmailHubPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -16,8 +16,8 @@ export default function SchedulerPage() {
   }
 
   const user = session?.user as any;
-  const userName = user?.name || 'John Doe';
-  const userRole = user?.role === 'student' ? 'Student' : (user?.role === 'teacher' ? 'Faculty Member' : 'Academic Member');
+  const userName = user?.name || 'Arian Kabir';
+  const userRole = user?.role === 'teacher' ? 'Lead Instructor' : (user?.role === 'admin' ? 'System Administrator' : (user?.role === 'student_tutor' ? 'Student Tutor' : 'University Student'));
 
   return (
     <div className="min-h-screen flex bg-[#f8f9fa] text-[#191c1d] font-sans selection:bg-[#002626] selection:text-white">
@@ -28,7 +28,7 @@ export default function SchedulerPage() {
           <span className="text-2xl">🎓</span>
           <div className="flex flex-col leading-none">
             <span className="font-extrabold text-base text-[#002626] tracking-tight">ClassConnect</span>
-            <span className="text-[10px] font-semibold text-[#51625b] tracking-wider uppercase">Study Hub</span>
+            <span className="text-[10px] font-semibold text-[#51625b] tracking-wider uppercase">Email Studio</span>
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export default function SchedulerPage() {
             <nav className="flex flex-col gap-1 px-3">
               <Link
                 href="/email-hub"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-[#002626] bg-[#e2ede6] transition-all"
               >
                 <span className="text-base">✉️</span>
                 <span>Email Engine (M3)</span>
@@ -81,7 +81,7 @@ export default function SchedulerPage() {
 
               <Link
                 href="/scheduler"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-[#002626] bg-[#e2ede6] transition-all"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
               >
                 <span className="text-base">⏱️</span>
                 <span>Study Scheduler (M3)</span>
@@ -155,7 +155,7 @@ export default function SchedulerPage() {
         <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-6">
             <h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
-              ClassConnect: Study Scheduler Hub
+              ClassConnect: Academic Email Studio
             </h1>
           </div>
 
@@ -187,9 +187,13 @@ export default function SchedulerPage() {
                 <p className="text-sm font-bold text-[#191c1d] leading-none">{userName}</p>
                 <p className="text-xs text-[#707978] mt-1">{userRole}</p>
               </div>
-              <div className="w-9 h-9 rounded-full bg-[#dbe5df] border border-[#c0c8c7] flex items-center justify-center text-sm font-bold text-[#002626]">
-                {userName.charAt(0)}
-              </div>
+              {user?.image ? (
+                <img src={user.image} alt={userName} className="w-9 h-9 rounded-full border border-[#c0c8c7] object-cover" />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-[#dbe5df] border border-[#c0c8c7] flex items-center justify-center text-sm font-bold text-[#002626]">
+                  {userName.charAt(0)}
+                </div>
+              )}
 
               <button
                 onClick={() => signOut({ callbackUrl: '/auth/login' })}
@@ -205,8 +209,9 @@ export default function SchedulerPage() {
           </div>
         </header>
 
+        {/* Page Content */}
         <main className="p-8 max-w-7xl mx-auto w-full flex flex-col gap-6">
-          <StudySchedulerHub />
+          <EmailTemplateEngine />
         </main>
       </div>
     </div>

@@ -8,11 +8,12 @@ import RoutineOrchestrator from '@/components/RoutineOrchestrator';
 import StaffingLedger from '@/components/StaffingLedger';
 import StudySchedulerHub from '@/components/StudyScheduler/StudySchedulerHub';
 import DeadlineAlertCenter from '@/components/StudyScheduler/DeadlineAlertCenter';
+import EmailTemplateEngine from '@/components/EmailHub/EmailTemplateEngine';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'Routine' | 'Study Scheduler' | 'Notes' | 'Chat'>('Routine');
+  const [activeTab, setActiveTab] = useState<'Routine' | 'Study Scheduler' | 'Email Hub' | 'Notes' | 'Chat'>('Routine');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -38,21 +39,21 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex bg-[#f8f9fa] text-[#191c1d] font-sans selection:bg-[#002626] selection:text-white">
       {/* =========================================================
-          LEFT SIDEBAR: COURSE NAVIGATOR
+          LEFT SIDEBAR: COURSE NAVIGATOR & WORKSPACE TOOLS
           ========================================================= */}
       <aside className="w-64 bg-[#f3f4f5] border-r border-[#e5e7eb] flex flex-col flex-shrink-0 min-h-screen">
-        {/* Sidebar Header */}
+        {/* Sidebar Header — Brand Logo */}
         <div className="h-16 px-6 flex items-center gap-3 border-b border-[#e5e7eb]">
-          <svg className="w-5 h-5 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-          </svg>
-          <span className="font-bold text-base text-[#191c1d] tracking-tight">Course Navigator</span>
+          <span className="text-2xl">🎓</span>
+          <div className="flex flex-col leading-none">
+            <span className="font-extrabold text-base text-[#002626] tracking-tight">ClassConnect</span>
+            <span className="text-[10px] font-semibold text-[#51625b] tracking-wider uppercase">Academic Portal</span>
+          </div>
         </div>
 
         {/* Navigation Sections */}
-        <div className="flex-1 py-6 flex flex-col gap-6">
-          {/* Section: My Courses */}
+        <div className="flex-1 py-6 flex flex-col gap-6 overflow-y-auto">
+          {/* Section 1: My Courses */}
           <div>
             <h3 className="px-6 text-[11px] font-bold uppercase tracking-wider text-[#707978] mb-3">
               My Courses
@@ -86,26 +87,59 @@ export default function DashboardPage() {
             </nav>
           </div>
 
-          {/* Section: Resources */}
+          {/* Section 2: Academic Modules & Tools */}
           <div>
             <h3 className="px-6 text-[11px] font-bold uppercase tracking-wider text-[#707978] mb-3">
-              Resources & Planning
+              Modules & Tools
             </h3>
             <nav className="flex flex-col gap-1 px-3">
               <Link
                 href="/scheduler"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-[#002626] bg-[#e2ede6] hover:bg-[#d0e4d8] transition-all group"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
               >
                 <span className="text-base">⏱️</span>
-                <span>Study Scheduler (M3)</span>
+                <span>Study Scheduler </span>
+              </Link>
+              <Link
+                href="/email-hub"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#002626] bg-[#e2ede6] hover:bg-[#d0e4d8] transition-all group"
+              >
+                <span className="text-base">✉️</span>
+                <span>Email Engine </span>
               </Link>
 
+              
+
+              <Link
+                href="/notes"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
+              >
+                <span className="text-base">📖</span>
+                <span>Notes & Canvas</span>
+              </Link>
+
+              <button
+                onClick={() => setActiveTab('Chat')}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group text-left"
+              >
+                <span className="text-base">💬</span>
+                <span>Section Group Chats</span>
+              </button>
+            </nav>
+          </div>
+
+          {/* Section 3: Administrative & Management */}
+          <div>
+            <h3 className="px-6 text-[11px] font-bold uppercase tracking-wider text-[#707978] mb-3">
+              Administration & Library
+            </h3>
+            <nav className="flex flex-col gap-1 px-3">
               <Link
                 href="/admin/allocations"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
               >
                 <span className="text-base">📋</span>
-                <span>Staffing Ledger (Admin)</span>
+                <span>Staffing Ledger</span>
               </Link>
 
               <Link
@@ -118,11 +152,9 @@ export default function DashboardPage() {
 
               <Link
                 href="#"
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group mt-1"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-[#404848] hover:text-[#002626] hover:bg-[#e7e9ea] transition-all group"
               >
-                <svg className="w-4 h-4 text-[#707978] group-hover:text-[#002626]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z" />
-                </svg>
+                <span className="text-base">📚</span>
                 <span>Digital Library</span>
               </Link>
             </nav>
@@ -147,7 +179,7 @@ export default function DashboardPage() {
           MAIN PORTAL CONTENT AREA
           ========================================================= */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Navigation Bar */}
+        {/* Top Navigation Bar: Simplified to Essential Core Tabs */}
         <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-8">
             <h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
@@ -155,13 +187,13 @@ export default function DashboardPage() {
             </h1>
           </div>
 
-          {/* Center Tabs & Profile */}
+          {/* Essential Center Tabs & Profile */}
           <div className="flex items-center gap-6">
-            <nav className="flex items-center gap-5">
+            <nav className="flex items-center gap-6">
               <button
                 onClick={() => setActiveTab('Routine')}
                 className={`relative py-5 text-sm font-semibold transition-colors ${
-                  activeTab === 'Routine' ? 'text-[#191c1d]' : 'text-[#707978] hover:text-[#191c1d]'
+                  activeTab === 'Routine' ? 'text-[#002626]' : 'text-[#707978] hover:text-[#191c1d]'
                 }`}
               >
                 Routine
@@ -170,24 +202,9 @@ export default function DashboardPage() {
                 )}
               </button>
 
-              <button
-                onClick={() => setActiveTab('Study Scheduler')}
-                className={`relative py-5 text-sm font-semibold transition-colors ${
-                  activeTab === 'Study Scheduler' ? 'text-[#002626]' : 'text-[#707978] hover:text-[#191c1d]'
-                }`}
-              >
-                <span>⏱️ Study Scheduler</span>
-                {activeTab === 'Study Scheduler' && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002626]" />
-                )}
-              </button>
-
               <Link
                 href="/notes"
-                onClick={() => setActiveTab('Notes')}
-                className={`relative py-5 text-sm font-semibold transition-colors ${
-                  activeTab === 'Notes' ? 'text-[#191c1d]' : 'text-[#707978] hover:text-[#191c1d]'
-                }`}
+                className="relative py-5 text-sm font-semibold text-[#707978] hover:text-[#191c1d] transition-colors"
               >
                 Notes
               </Link>
@@ -195,29 +212,14 @@ export default function DashboardPage() {
               <button
                 onClick={() => setActiveTab('Chat')}
                 className={`relative py-5 text-sm font-semibold transition-colors ${
-                  activeTab === 'Chat' ? 'text-[#191c1d]' : 'text-[#707978] hover:text-[#191c1d]'
+                  activeTab === 'Chat' ? 'text-[#002626]' : 'text-[#707978] hover:text-[#191c1d]'
                 }`}
               >
                 Chat
+                {activeTab === 'Chat' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002626]" />
+                )}
               </button>
-
-              <Link
-                href="/scheduler"
-                className="text-xs font-bold text-[#002626] bg-[#e2ede6] hover:bg-[#d0e4d8] px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors"
-                title="Contextual Student Routine Builder & Study Scheduler"
-              >
-                <span>⏱️</span>
-                <span>Study Matrix</span>
-              </Link>
-
-              <Link
-                href="/admin/allocations"
-                className="text-xs font-bold text-[#51625b] bg-[#ebeded] hover:bg-[#dbe0de] px-3 py-1.5 rounded-full flex items-center gap-1.5 transition-colors"
-                title="Cross-Role Section Staffing & Allocation Ledger"
-              >
-                <span>📋</span>
-                <span>Staffing Ledger</span>
-              </Link>
             </nav>
 
             {/* Profile Info & Logout */}
@@ -253,58 +255,71 @@ export default function DashboardPage() {
         {/* Page Main Content */}
         <main className="p-8 max-w-7xl mx-auto w-full flex flex-col gap-8">
           {/* =========================================================
-              1. 4 ACTION / MODULE CARDS
+              1. 5 ACTION / MODULE CARDS
               ========================================================= */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5">
             {/* Card 1: Class Schedule */}
             <div
               onClick={() => setActiveTab('Routine')}
-              className={`rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
+              className={`rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:shadow-md transition-all cursor-pointer group min-h-[170px] ${
                 activeTab === 'Routine' ? 'bg-[#d0e4d8] ring-2 ring-[#002626]' : 'bg-[#e5ece8]'
               }`}
             >
-              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                <svg className="w-5 h-5 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <span className="font-semibold text-sm text-[#191c1d]">Class Schedule</span>
+              <span className="font-semibold text-xs text-[#191c1d]">Class Schedule</span>
             </div>
 
-            {/* Card 2: Study Scheduler (Module 3) */}
+            {/* Card 2: Email Hub (Module 3) */}
+            <div
+              onClick={() => setActiveTab('Email Hub')}
+              className={`rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:shadow-md transition-all cursor-pointer group min-h-[170px] ${
+                activeTab === 'Email Hub' ? 'bg-[#d0e4d8] ring-2 ring-[#002626]' : 'bg-[#e5ece8]'
+              }`}
+            >
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                <span className="text-xl">✉️</span>
+              </div>
+              <span className="font-semibold text-xs text-[#191c1d]">Email Engine (M3)</span>
+            </div>
+
+            {/* Card 3: Study Scheduler (Module 3) */}
             <div
               onClick={() => setActiveTab('Study Scheduler')}
-              className={`rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px] ${
+              className={`rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:shadow-md transition-all cursor-pointer group min-h-[170px] ${
                 activeTab === 'Study Scheduler' ? 'bg-[#d0e4d8] ring-2 ring-[#002626]' : 'bg-[#e5ece8]'
               }`}
             >
-              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <span className="text-2xl">⏱️</span>
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                <span className="text-xl">⏱️</span>
               </div>
-              <span className="font-semibold text-sm text-[#191c1d]">Study Scheduler (M3)</span>
+              <span className="font-semibold text-xs text-[#191c1d]">Study Scheduler</span>
             </div>
 
-            {/* Card 3: Canvas / Notes */}
+            {/* Card 4: Canvas / Notes */}
             <Link
               href="/notes"
-              className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]"
+              className="bg-[#e5ece8] rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:shadow-md transition-all cursor-pointer group min-h-[170px]"
             >
-              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                <svg className="w-5 h-5 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
               </div>
-              <span className="font-semibold text-sm text-[#191c1d]">Notes & Canvas</span>
+              <span className="font-semibold text-xs text-[#191c1d]">Notes & Canvas</span>
             </Link>
 
-            {/* Card 4: Group Chats */}
-            <div className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]">
-              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            {/* Card 5: Group Chats */}
+            <div className="bg-[#e5ece8] rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3 hover:shadow-md transition-all cursor-pointer group min-h-[170px]">
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                <svg className="w-5 h-5 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <span className="font-semibold text-sm text-[#191c1d]">Group Chats</span>
+              <span className="font-semibold text-xs text-[#191c1d]">Group Chats</span>
             </div>
           </div>
 
@@ -336,7 +351,16 @@ export default function DashboardPage() {
           )}
 
           {/* =========================================================
-              4. TAB VIEW 2: STUDY SCHEDULER (MODULE 3)
+              4. TAB VIEW 2: EMAIL HUB (MODULE 3)
+              ========================================================= */}
+          {activeTab === 'Email Hub' && (
+            <div className="flex flex-col gap-4">
+              <EmailTemplateEngine />
+            </div>
+          )}
+
+          {/* =========================================================
+              5. TAB VIEW 3: STUDY SCHEDULER (MODULE 3)
               ========================================================= */}
           {activeTab === 'Study Scheduler' && (
             <div className="flex flex-col gap-4">
@@ -345,7 +369,7 @@ export default function DashboardPage() {
           )}
 
           {/* =========================================================
-              5. STAFFING & ALLOCATION LEDGER (DYNAMIC COMPONENT)
+              6. STAFFING & ALLOCATION LEDGER (DYNAMIC COMPONENT)
               ========================================================= */}
           <StaffingLedger />
         </main>
