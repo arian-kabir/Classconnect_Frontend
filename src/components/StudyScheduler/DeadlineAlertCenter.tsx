@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 
 export interface DeadlineReminderItem {
   reminder_id?: number;
@@ -26,6 +27,11 @@ export default function DeadlineAlertCenter({
   onScheduleForDeadline,
   compact = false,
 }: DeadlineAlertCenterProps) {
+  const { data: session } = useSession();
+  const user = session?.user as any;
+  const activeUserId = user?.id || user?.user_id || 9;
+  const activeEmail = user?.email || undefined;
+
   const [reminders, setReminders] = useState<DeadlineReminderItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -34,7 +40,8 @@ export default function DeadlineAlertCenter({
   const fetchReminders = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/reminders?userId=1&_t=${Date.now()}`);
+      const query = activeEmail ? `email=${encodeURIComponent(activeEmail)}` : `userId=${activeUserId}`;
+      const res = await fetch(`/api/reminders?${query}&_t=${Date.now()}`);
       if (!res.ok) throw new Error('Failed to fetch deadline alerts');
       const data = await res.json();
       if (Array.isArray(data)) {
@@ -45,7 +52,7 @@ export default function DeadlineAlertCenter({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [activeUserId, activeEmail]);
 
   useEffect(() => {
     fetchReminders();
@@ -62,7 +69,8 @@ export default function DeadlineAlertCenter({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'dismiss',
-            userId: 1,
+            userId: activeUserId,
+            email: activeEmail,
             reminderId: item.reminder_id,
           }),
         });

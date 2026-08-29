@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface Course {
   course_id: number;
@@ -96,6 +97,11 @@ export default function StudySessionModal({
       .catch((err) => console.error('Failed to load courses:', err));
   }, [initialCourseCode]);
 
+  const { data: session } = useSession();
+  const user = session?.user as any;
+  const activeUserId = user?.id || user?.user_id || 9;
+  const activeEmail = user?.email || undefined;
+
   // Live Conflict Evaluation with debounce
   useEffect(() => {
     if (!isOpen || !dayOfWeek || !startTime || !endTime) return;
@@ -107,7 +113,8 @@ export default function StudySessionModal({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: 1,
+            userId: activeUserId,
+            email: activeEmail,
             day_of_week: dayOfWeek,
             start_time: startTime,
             end_time: endTime,
@@ -123,7 +130,7 @@ export default function StudySessionModal({
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [isOpen, dayOfWeek, startTime, endTime]);
+  }, [isOpen, dayOfWeek, startTime, endTime, activeUserId, activeEmail]);
 
   if (!isOpen) return null;
 
@@ -142,7 +149,8 @@ export default function StudySessionModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 1,
+          userId: activeUserId,
+          email: activeEmail,
           course_id: courseId ? parseInt(courseId, 10) : null,
           title: title.trim(),
           description: description.trim(),

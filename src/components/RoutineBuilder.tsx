@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface Section {
   section_id: number;
@@ -85,6 +86,11 @@ export default function RoutineBuilder({ onRoutineAdded }: RoutineBuilderProps) 
   );
   const availableSections = selectedCourse && Array.isArray(selectedCourse.sections) ? selectedCourse.sections : [];
 
+  const { data: session } = useSession();
+  const user = session?.user as any;
+  const activeUserId = user?.id || user?.user_id || 9;
+  const activeEmail = user?.email || undefined;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -100,7 +106,11 @@ export default function RoutineBuilder({ onRoutineAdded }: RoutineBuilderProps) 
       const res = await fetch('/api/routines', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          userId: activeUserId,
+          email: activeEmail,
+        }),
       });
 
       const data = await res.json();

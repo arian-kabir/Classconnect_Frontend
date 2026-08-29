@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import StudySessionModal from './StudySessionModal';
 import DeadlineAlertCenter, { DeadlineReminderItem } from './DeadlineAlertCenter';
 
@@ -92,10 +93,16 @@ export default function StudySchedulerHub() {
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const { data: session } = useSession();
+  const user = session?.user as any;
+  const activeUserId = user?.id || user?.user_id || 9;
+  const activeEmail = user?.email || undefined;
+
   const fetchSchedule = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`/api/study-scheduler?userId=1&_t=${Date.now()}`);
+      const query = activeEmail ? `email=${encodeURIComponent(activeEmail)}` : `userId=${activeUserId}`;
+      const res = await fetch(`/api/study-scheduler?${query}&_t=${Date.now()}`);
       if (!res.ok) throw new Error('Failed to load study schedule');
       const json = await res.json();
       setData(json);
@@ -104,7 +111,7 @@ export default function StudySchedulerHub() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [activeUserId, activeEmail]);
 
   useEffect(() => {
     fetchSchedule();
@@ -136,15 +143,16 @@ export default function StudySchedulerHub() {
     });
   };
 
-  const handleToggleSessionStatus = async (session: StudyItem) => {
-    const nextStatus = session.status === 'completed' ? 'scheduled' : 'completed';
+  const handleToggleSessionStatus = async (sessionItem: StudyItem) => {
+    const nextStatus = sessionItem.status === 'completed' ? 'scheduled' : 'completed';
     try {
       const res = await fetch('/api/study-scheduler', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 1,
-          sessionId: session.id,
+          userId: activeUserId,
+          email: activeEmail,
+          sessionId: sessionItem.id,
           status: nextStatus,
         }),
       });
@@ -159,7 +167,8 @@ export default function StudySchedulerHub() {
   const handleDeleteSession = async (sessionId: number) => {
     if (!confirm('Remove this scheduled study session?')) return;
     try {
-      const res = await fetch(`/api/study-scheduler?userId=1&sessionId=${sessionId}`, {
+      const query = activeEmail ? `email=${encodeURIComponent(activeEmail)}` : `userId=${activeUserId}`;
+      const res = await fetch(`/api/study-scheduler?${query}&sessionId=${sessionId}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to delete session');
