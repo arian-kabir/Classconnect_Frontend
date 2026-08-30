@@ -6,13 +6,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import RoutineOrchestrator from '@/components/RoutineOrchestrator';
 import StaffingLedger from '@/components/StaffingLedger';
-// import StudySchedulerHub from '@/components/StudyScheduler/StudySchedulerHub';
-// import DeadlineAlertCenter from '@/components/StudyScheduler/DeadlineAlertCenter';
+import MaterialPipelineBoard from '@/components/MaterialPipelineBoard';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'Routine' | 'Study Scheduler' | 'Notes' | 'Chat'>('Routine');
+  const [activeTab, setActiveTab] = useState<'Routine' | 'Notes' | 'Chat'>('Routine');
+  const [showRemainder, setShowRemainder] = useState(true);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -143,12 +143,13 @@ export default function DashboardPage() {
         </div>
       </aside>
 
-      {/* =========================================================
-          MAIN PORTAL CONTENT AREA
-          ========================================================= */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Navigation Bar */}
-        <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
+          {/* =========================================================
+              MAIN PORTAL CONTENT AREA
+              ========================================================= */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Top Navigation Bar */}
+            <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
+                      <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-8">
             <h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
               ClassConnect: Academic Portal
@@ -182,15 +183,17 @@ export default function DashboardPage() {
                 )}
               </button>
 
-              <Link
-                href="/notes"
+              <button
                 onClick={() => setActiveTab('Notes')}
                 className={`relative py-5 text-sm font-semibold transition-colors ${
                   activeTab === 'Notes' ? 'text-[#191c1d]' : 'text-[#707978] hover:text-[#191c1d]'
                 }`}
               >
                 Notes
-              </Link>
+                {activeTab === 'Notes' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002626]" />
+                )}
+              </button>
 
               <Link
                 href="/chat"
@@ -232,7 +235,7 @@ export default function DashboardPage() {
                 <img src={user.image} alt={userName} className="w-9 h-9 rounded-full border border-[#c0c8c7] object-cover" />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-[#dbe5df] border border-[#c0c8c7] flex items-center justify-center text-sm font-bold text-[#002626]">
-                  {userName.charAt(0)}
+                   {userName.charAt(0)}
                 </div>
               )}
 
@@ -285,18 +288,18 @@ export default function DashboardPage() {
               <span className="font-semibold text-sm text-[#191c1d]">Study Scheduler (M3)</span>
             </div>
 
-            {/* Card 3: Canvas / Notes */}
-            <Link
-              href="/canvas"
-              className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]"
-            >
-              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <span className="font-semibold text-sm text-[#191c1d]">Canvas</span>
-            </Link>
+                {/* Card 3: Notes and Material */}
+                <Link
+                  href="/notes"
+                  className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]"
+                >
+                  <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                    <svg className="w-6 h-6 text-[#191c1d]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <span className="font-semibold text-sm text-[#191c1d]">Notes and Material</span>
+                </Link>
 
             {/* Card 4: Group Chats */}
             <div className="bg-[#e5ece8] rounded-2xl p-8 flex flex-col items-center justify-center text-center gap-4 hover:shadow-md transition-all cursor-pointer group min-h-[190px]">
@@ -336,21 +339,12 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* =========================================================
-              4. TAB VIEW 2: STUDY SCHEDULER (MODULE 3)
-              ========================================================= */}
-          {activeTab === 'Study Scheduler' && (
-            <div className="flex flex-col gap-4">
-              {/* <StudySchedulerHub /> */}
-            </div>
-          )}
-
-          {/* =========================================================
-              5. STAFFING & ALLOCATION LEDGER (DYNAMIC COMPONENT)
-              ========================================================= */}
-          <StaffingLedger />
-        </main>
-      </div>
-    </div>
-  );
-}
+              {/* =========================================================
+                  4. STAFFING & ALLOCATION LEDGER (DYNAMIC COMPONENT)
+                  ========================================================= */}
+              <StaffingLedger />
+            </main>
+          </div>
+        </div>
+      );
+    }
