@@ -30,7 +30,7 @@ export default function CanvasPage() {
 
 
 //  const [activeTab, setActiveTab] = useState('Chat');
-  const [activeTab, setActiveTab] = useState('Routine');
+  const [activeTab, setActiveTab] = useState('Dashboard');
   const { data: session } = useSession();
 
   // const userId = 1;
@@ -213,30 +213,22 @@ export default function CanvasPage() {
       <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
 
         <div className="flex items-center gap-8">
-          <h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
-            ClassConnect: Academic Portal
-          </h1>
-        </div>
+          
+            
+            <Link
+              href="/dashboard"
+              onClick={() => setActiveTab('dashboard')}
+              className={`relative py-5 text-sm font-semibold transition-colors ${
+                activeTab === 'dashboard'
+                  ? 'text-[#191c1d]'
+                  : 'text-[#707978] hover:text-[#191c1d]'
+              }`}><h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
+                ClassConnect: Academic Portal</h1></Link> 
+              </div>
 
         <div className="flex items-center gap-6">
 
           <nav className="flex items-center gap-5">
-
-            <button
-              onClick={() => setActiveTab('Routine')}
-              className={`relative py-5 text-sm font-semibold transition-colors ${
-                activeTab === 'Routine'
-                  ? 'text-[#191c1d]'
-                  : 'text-[#707978] hover:text-[#191c1d]'
-              }`}
-            >
-              Routine
-
-              {activeTab === 'Routine' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#002626]" />
-              )}
-            </button>
-
             <Link
               href="/chat"
               onClick={() => setActiveTab('Chat')}
@@ -249,7 +241,6 @@ export default function CanvasPage() {
               Chat
             </Link>
           </nav>
-
           {/* Profile */}
           <div className="flex items-center gap-4 pl-4 border-l border-[#e5e7eb]">
 

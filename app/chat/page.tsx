@@ -25,7 +25,6 @@ export default function ChatPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState('Chat');
-
   // const userId = 1;
   const userId = session?.user?.id
     ? Number(session.user.id)
@@ -160,9 +159,11 @@ export default function ChatPage() {
       <header className="h-16 px-8 bg-white border-b border-[#e5e7eb] flex items-center justify-between sticky top-0 z-20">
 
         <div className="flex items-center gap-8">
-          <h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
-            ClassConnect: Academic Portal
-          </h1>
+          <Link href="/dashboard">
+            <h1 className="font-bold text-base md:text-lg text-[#191c1d] tracking-tight">
+              ClassConnect: Academic Portal
+            </h1>
+          </Link>
         </div>
 
         <div className="flex items-center gap-6">
